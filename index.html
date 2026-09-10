@@ -830,43 +830,51 @@
 
     // 5. Tiered Submission Handler
     async function handleSubmit(sourcePage) {
-      // Tiered discount math: Page 1 = 1% to 8%, Page 2 = 7% to 15%
+      // Tiered discount calculation
       if (sourcePage === 1) {
         discountRate = Math.floor(Math.random() * 8) + 1; // 1% to 8%
       } else {
         discountRate = Math.floor(Math.random() * 9) + 7; // 7% to 15%
       }
-
+    
       finalCode = "VILLAGE" + discountRate + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
-
+    
       document.getElementById("discountText").innerText = discountRate + "% OFF";
       document.getElementById("couponCode").innerText = finalCode;
-
+    
       // Show reward pop-up
       document.getElementById("rewardModal").classList.add("open");
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-
-      // Gather answers and submit silently
-      const formData = new FormData();
+    
+      // Use URLSearchParams for Google Forms urlencoded format
+      const formParams = new URLSearchParams();
+    
       document.querySelectorAll("#page1 .q-item, #page2 .q-item").forEach(item => {
         const text = item.querySelector("input[type='text'], textarea");
         const checked = item.querySelectorAll("input[type='radio']:checked, input[type='checkbox']:checked");
-
+    
         if (text && text.value.trim() !== "") {
-          formData.append(text.name, text.value.trim());
+          formParams.append(text.name, text.value.trim());
         }
         checked.forEach(box => {
-          formData.append(box.name, box.value);
+          formParams.append(box.name, box.value);
         });
       });
-
+    
       try {
-        await fetch(GOOGLE_FORM_URL, { method: "POST", mode: "no-cors", body: formData });
+        await fetch(GOOGLE_FORM_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formParams.toString()
+        });
+        console.log("Form submission transmitted successfully.");
       } catch (err) {
         console.error("Submission failed:", err);
       }
     }
-
     // 6. Direct Client-Side Canvas PNG Downloader
     function downloadVoucherPNG() {
       const canvas = document.createElement("canvas");
