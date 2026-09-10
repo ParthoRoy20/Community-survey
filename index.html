@@ -272,6 +272,8 @@
   </style>
 </head>
 <body>
+  
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 
   <!-- Light / Dark Theme Button -->
     <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">
@@ -757,181 +759,185 @@
     </div>
   </div>
 
+  </body>
   <script>
-    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdPAcIrWI1EQ73pRxlRbeWi6JZVIRpcA0u7qWPAwTyH1zBoyQ/formResponse";
+  const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdPAcIrWI1EQ73pRxlRbeWi6JZVIRpcA0u7qWPAwTyH1zBoyQ/formResponse";
 
-    let discountRate = 0;
-    let finalCode = "";
+  let discountRate = 0;
+  let finalCode = "";
 
-    // 1. Theme Toggle Logic
-    function toggleTheme() {
-      const htmlEl = document.documentElement;
-      const currentTheme = htmlEl.getAttribute("data-theme");
-      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+  // 1. Theme Toggle Logic
+  function toggleTheme() {
+    const htmlEl = document.documentElement;
+    const currentTheme = htmlEl.getAttribute("data-theme");
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    
+    htmlEl.setAttribute("data-theme", nextTheme);
+    document.getElementById("themeIcon").innerText = nextTheme === "dark" ? "☀️" : "🌙";
+    document.getElementById("themeText").innerText = nextTheme === "dark" ? "Light" : "Dark";
+  }
+
+  // 2. Page Navigation
+  function setPage(pageNum) {
+    document.getElementById("page0").classList.toggle("active", pageNum === 0);
+    document.getElementById("page1").classList.toggle("active", pageNum === 1);
+    document.getElementById("page2").classList.toggle("active", pageNum === 2);
+
+    const progressBox = document.getElementById("mainProgressBox");
+    if (progressBox) {
+      progressBox.style.display = (pageNum === 0) ? "none" : "block";
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // 3. Consent Validation
+  function startSurveyAfterConsent() {
+    const isAgreed = document.getElementById("consentCheck").checked;
+    const errorMsg = document.getElementById("consentError");
+
+    if (!isAgreed) {
+      errorMsg.style.display = "block";
+      return;
+    }
+
+    errorMsg.style.display = "none";
+    setPage(1);
+  }
+
+  // 4. Dynamic Progress Calculation
+  function updateProgress() {
+    const qItems = document.querySelectorAll("#page1 .q-item, #page2 .q-item");
+    let answeredCount = 0;
+
+    qItems.forEach(item => {
+      const textInput = item.querySelector("input[type='text'], textarea");
+      const checkedBox = item.querySelector("input[type='radio']:checked, input[type='checkbox']:checked");
       
-      htmlEl.setAttribute("data-theme", nextTheme);
-      document.getElementById("themeIcon").innerText = nextTheme === "dark" ? "☀️" : "🌙";
-      document.getElementById("themeText").innerText = nextTheme === "dark" ? "Light" : "Dark";
-    }
-
-    // 2. Page Navigation
-    function setPage(pageNum) {
-      document.getElementById("page0").classList.toggle("active", pageNum === 0);
-      document.getElementById("page1").classList.toggle("active", pageNum === 1);
-      document.getElementById("page2").classList.toggle("active", pageNum === 2);
-
-      const progressBox = document.getElementById("mainProgressBox");
-      if (progressBox) {
-        progressBox.style.display = (pageNum === 0) ? "none" : "block";
-      }
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    // 3. Consent Validation
-    function startSurveyAfterConsent() {
-      const isAgreed = document.getElementById("consentCheck").checked;
-      const errorMsg = document.getElementById("consentError");
-
-      if (!isAgreed) {
-        errorMsg.style.display = "block";
-        return;
-      }
-
-      errorMsg.style.display = "none";
-      setPage(1);
-    }
-
-    // 4. Dynamic Progress Calculation
-    function updateProgress() {
-      const qItems = document.querySelectorAll("#page1 .q-item, #page2 .q-item");
-      let answeredCount = 0;
-
-      qItems.forEach(item => {
-        const textInput = item.querySelector("input[type='text'], textarea");
-        const checkedBox = item.querySelector("input[type='radio']:checked, input[type='checkbox']:checked");
-        
-        if (textInput && textInput.value.trim() !== "") answeredCount++;
-        else if (checkedBox) answeredCount++;
-      });
-
-      const totalQuestions = qItems.length;
-      const percent = Math.round((answeredCount / totalQuestions) * 100);
-      
-      document.getElementById("progressFill").style.width = percent + "%";
-      document.getElementById("percentText").innerText = percent + "%";
-      document.getElementById("counterText").innerText = `${answeredCount} of ${totalQuestions} answered`;
-    }
-
-    document.querySelectorAll("input, textarea").forEach(element => {
-      element.addEventListener("input", updateProgress);
-      element.addEventListener("change", updateProgress);
+      if (textInput && textInput.value.trim() !== "") answeredCount++;
+      else if (checkedBox) answeredCount++;
     });
 
-    // 5. Tiered Submission Handler
-    async function handleSubmit(sourcePage) {
-      // Tiered discount calculation
-      if (sourcePage === 1) {
-        discountRate = Math.floor(Math.random() * 8) + 1; // 1% to 8%
-      } else {
-        discountRate = Math.floor(Math.random() * 9) + 7; // 7% to 15%
+    const totalQuestions = qItems.length;
+    const percent = Math.round((answeredCount / totalQuestions) * 100);
+    
+    document.getElementById("progressFill").style.width = percent + "%";
+    document.getElementById("percentText").innerText = percent + "%";
+    document.getElementById("counterText").innerText = `${answeredCount} of ${totalQuestions} answered`;
+  }
+
+  document.querySelectorAll("input, textarea").forEach(element => {
+    element.addEventListener("input", updateProgress);
+    element.addEventListener("change", updateProgress);
+  });
+
+  // 5. Tiered Submission Handler (Hidden Form to Iframe)
+  function handleSubmit(sourcePage) {
+    // Tiered discount calculation
+    if (sourcePage === 1) {
+      discountRate = Math.floor(Math.random() * 8) + 1; // 1% to 8%
+    } else {
+      discountRate = Math.floor(Math.random() * 9) + 7; // 7% to 15%
+    }
+
+    finalCode = "VILLAGE" + discountRate + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+    document.getElementById("discountText").innerText = discountRate + "% OFF";
+    document.getElementById("couponCode").innerText = finalCode;
+
+    // Show reward pop-up and fireworks
+    document.getElementById("rewardModal").classList.add("open");
+    confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+
+    // Build temporary form to bypass cross-origin browser fetch blocks
+    const hiddenForm = document.createElement("form");
+    hiddenForm.action = GOOGLE_FORM_URL;
+    hiddenForm.method = "POST";
+    hiddenForm.target = "hidden_iframe";
+    hiddenForm.style.display = "none";
+
+    document.querySelectorAll("#page1 .q-item, #page2 .q-item").forEach(item => {
+      const text = item.querySelector("input[type='text'], textarea");
+      const checked = item.querySelectorAll("input[type='radio']:checked, input[type='checkbox']:checked");
+
+      if (text && text.value.trim() !== "") {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = text.name;
+        input.value = text.value.trim();
+        hiddenForm.appendChild(input);
       }
-    
-      finalCode = "VILLAGE" + discountRate + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
-    
-      document.getElementById("discountText").innerText = discountRate + "% OFF";
-      document.getElementById("couponCode").innerText = finalCode;
-    
-      // Show reward pop-up
-      document.getElementById("rewardModal").classList.add("open");
-      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
-    
-      // Use URLSearchParams for Google Forms urlencoded format
-      const formParams = new URLSearchParams();
-    
-      document.querySelectorAll("#page1 .q-item, #page2 .q-item").forEach(item => {
-        const text = item.querySelector("input[type='text'], textarea");
-        const checked = item.querySelectorAll("input[type='radio']:checked, input[type='checkbox']:checked");
-    
-        if (text && text.value.trim() !== "") {
-          formParams.append(text.name, text.value.trim());
-        }
-        checked.forEach(box => {
-          formParams.append(box.name, box.value);
-        });
+
+      checked.forEach(box => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = box.name;
+        input.value = box.value;
+        hiddenForm.appendChild(input);
       });
-    
-      try {
-        await fetch(GOOGLE_FORM_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formParams.toString()
-        });
-        console.log("Form submission transmitted successfully.");
-      } catch (err) {
-        console.error("Submission failed:", err);
-      }
-    }
-    // 6. Direct Client-Side Canvas PNG Downloader
-    function downloadVoucherPNG() {
-      const canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 320;
-      const ctx = canvas.getContext("2d");
+    });
 
-      // Card Base
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    document.body.appendChild(hiddenForm);
+    hiddenForm.submit();
+    hiddenForm.remove();
+  }
 
-      // Solid outer boundary
-      ctx.strokeStyle = "#6366f1";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+  // 6. Direct Client-Side Canvas PNG Downloader
+  function downloadVoucherPNG() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 600;
+    canvas.height = 320;
+    const ctx = canvas.getContext("2d");
 
-      // Dashed inner border
-      ctx.strokeStyle = "#475569";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([8, 6]);
-      ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
-      ctx.setLineDash([]);
+    // Card Base
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Label
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "bold 16px system-ui, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("COMMUNITY REWARD VOUCHER", 300, 75);
+    // Solid outer boundary
+    ctx.strokeStyle = "#6366f1";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
 
-      // Percentage
-      ctx.fillStyle = "#22c55e";
-      ctx.font = "bold 60px system-ui, sans-serif";
-      ctx.fillText(`${discountRate}% OFF`, 300, 150);
+    // Dashed inner border
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+    ctx.setLineDash([]);
 
-      // Code Box
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(170, 185, 260, 48);
-      ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(170, 185, 260, 48);
+    // Label
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 16px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("COMMUNITY REWARD VOUCHER", 300, 75);
 
-      // Code Text
-      ctx.fillStyle = "#38bdf8";
-      ctx.font = "bold 20px monospace";
-      ctx.fillText(finalCode, 300, 216);
+    // Percentage
+    ctx.fillStyle = "#22c55e";
+    ctx.font = "bold 60px system-ui, sans-serif";
+    ctx.fillText(`${discountRate}% OFF`, 300, 150);
 
-      // Footer
-      ctx.fillStyle = "#64748b";
-      ctx.font = "13px system-ui, sans-serif";
-      ctx.fillText("Valid on your next store visit • Present image to cashier", 300, 268);
+    // Code Box
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(170, 185, 260, 48);
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(170, 185, 260, 48);
 
-      // Trigger automatic download
-      const link = document.createElement("a");
-      link.download = `village-store-voucher-${discountRate}pct.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    }
-  </script>
-</body>
+    // Code Text
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 20px monospace";
+    ctx.fillText(finalCode, 300, 216);
+
+    // Footer
+    ctx.fillStyle = "#64748b";
+    ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText("Valid on your next store visit • Present image to cashier", 300, 268);
+
+    // Trigger automatic download
+    const link = document.createElement("a");
+    link.download = `village-store-voucher-${discountRate}pct.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+</script>
 </html>
