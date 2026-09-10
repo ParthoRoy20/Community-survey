@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <style>
+    /* Dark Theme Default */
     :root {
       --bg: #0f172a;
       --card: #1e293b;
@@ -15,6 +16,24 @@
       --text: #f8fafc;
       --muted: #94a3b8;
       --border: #334155;
+      --input-bg: #0f172a;
+      --box-bg: #0f172a;
+      --border-item: rgba(51, 65, 85, 0.5);
+      --code-bg: #0f172a;
+    }
+
+    /* Light Theme */
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --accent: #4f46e5;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --input-bg: #f8fafc;
+      --box-bg: #f8fafc;
+      --border-item: rgba(203, 213, 225, 0.8);
+      --code-bg: #e2e8f0;
     }
 
     body {
@@ -27,6 +46,7 @@
       justify-content: center;
       min-height: 100vh;
       box-sizing: border-box;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
     .container {
@@ -35,8 +55,30 @@
       max-width: 680px;
       width: 100%;
       padding: 2.5rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
       height: fit-content;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+
+    /* Theme Switcher Button */
+    .theme-toggle-btn {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: var(--box-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: auto;
+      flex: none;
     }
 
     /* Progress Tracker */
@@ -47,7 +89,7 @@
       background: var(--card);
       padding-bottom: 0.5rem;
       z-index: 10;
-      display: none; /* Initially hidden on Page 0 */
+      display: none;
     }
 
     .progress-labels {
@@ -80,7 +122,7 @@
     .q-item {
       margin-bottom: 1.75rem;
       padding-bottom: 1.25rem;
-      border-bottom: 1px solid rgba(51,65,85,0.5);
+      border-bottom: 1px solid var(--border-item);
     }
 
     label.title {
@@ -103,7 +145,6 @@
       gap: 0.6rem;
       cursor: pointer;
       font-size: 0.92rem;
-      color: #cbd5e1;
     }
 
     input[type="text"], textarea {
@@ -111,8 +152,8 @@
       padding: 10px 14px;
       border-radius: 8px;
       border: 1px solid var(--border);
-      background: #0f172a;
-      color: #fff;
+      background: var(--input-bg);
+      color: var(--text);
       font-size: 0.95rem;
       box-sizing: border-box;
       font-family: inherit;
@@ -165,7 +206,7 @@
 
     button:hover { opacity: 0.9; }
     .btn-primary { background: var(--accent); color: white; }
-    .btn-secondary { background: #334155; color: var(--text); }
+    .btn-secondary { background: var(--border); color: var(--text); }
 
     /* Modal Backdrop & Card */
     .modal-backdrop {
@@ -182,14 +223,14 @@
     .modal-backdrop.open { display: grid; }
 
     .modal-card {
-      background: #1e293b;
+      background: var(--card);
       padding: 2.5rem 2rem;
       border-radius: 16px;
       max-width: 440px;
       width: 100%;
       text-align: center;
-      border: 1px solid #475569;
-      box-shadow: 0 20px 30px rgba(0,0,0,0.5);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 30px rgba(0,0,0,0.3);
     }
 
     .discount-val {
@@ -203,7 +244,7 @@
       display: inline-block;
       font-family: monospace;
       padding: 8px 16px;
-      background: #0f172a;
+      background: var(--code-bg);
       border: 1px dashed #38bdf8;
       border-radius: 6px;
       color: #38bdf8;
@@ -216,6 +257,11 @@
 
   <div class="container">
     
+    <!-- Light / Dark Theme Button -->
+    <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">
+      <span id="themeIcon">☀️</span> <span id="themeText">Light</span>
+    </button>
+
     <!-- Live Progress Bar -->
     <div class="progress-box" id="mainProgressBox">
       <div class="progress-labels">
@@ -227,38 +273,34 @@
       </div>
     </div>
 
-    <!-- ================= PAGE 0: PARTICIPANT INFORMATION SHEET & CONSENT ================= -->
+    <!-- ================= PAGE 0: ANONYMOUS PARTICIPANT INFO & CONSENT ================= -->
     <div id="page0" class="page active">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div style="text-align: center; margin-bottom: 1.5rem; padding-top: 0.5rem;">
         <span style="font-size: 0.82rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em;">
-          University of Winchester • Faculty of Business &amp; Digital Technologies
+          Academic Research Study
         </span>
         <h2 style="margin: 0.5rem 0 0.25rem 0; font-size: 1.45rem;">Participant Information &amp; Consent</h2>
         <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Revitalising Rural Retail: Community Shopping &amp; Service Improvement Survey</p>
       </div>
 
-      <div style="background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: #cbd5e1; max-height: 280px; overflow-y: auto; margin-bottom: 1.5rem;">
-        <p style="margin-top: 0;"><strong>Researcher:</strong> Partha Saroti Roy (MSc Digital Marketing and Analytics)<br>
-        <strong>Contact:</strong> P.roy1.25@unimail.winchester.ac.uk<br>
-        <strong>Supervisor:</strong> Ian Lock (Ian.Lock@winchester.ac.uk)</p>
-
-        <p><strong>1. Aim of the Study:</strong><br>
-        This research study investigates local shopping patterns, online grocery delivery habits, and community interest in new retail and social hub services (such as a café or ready-to-eat food counter) at the Micheldever Village Store.</p>
+      <div style="background: var(--box-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; font-size: 0.88rem; line-height: 1.6; max-height: 280px; overflow-y: auto; margin-bottom: 1.5rem;">
+        <p style="margin-top: 0;"><strong>1. Aim of the Study:</strong><br>
+        This research study investigates local grocery shopping habits, online delivery usage, and community interest in new retail and social hub services (such as a café or ready-to-eat food counter) at the Micheldever Village Store.</p>
 
         <p><strong>2. Voluntary Participation &amp; Time Commitment:</strong><br>
-        Your participation is entirely voluntary and will take approximately 3 to 5 minutes. You may stop and exit the questionnaire at any point before submitting without consequence.</p>
+        Your participation is entirely voluntary and takes approximately 3 to 5 minutes. You may stop and exit the questionnaire at any point before submitting without consequence.</p>
 
         <p><strong>3. Complete Anonymity &amp; Withdrawal:</strong><br>
         This survey is strictly anonymous. No names, personal email addresses, phone numbers, or IP addresses are tracked or stored. Because responses cannot be linked back to individual participants, data cannot be modified or withdrawn once submitted.</p>
 
         <p><strong>4. Data Handling &amp; Confidentiality:</strong><br>
-        All gathered information will be stored securely on a password-protected University OneDrive account in strict accordance with the Data Protection Act (2018). Data will only be reported in aggregate within an academic dissertation.</p>
+        All gathered information will be stored securely on a password-protected academic drive in strict accordance with the Data Protection Act (2018). Data will only be reported in aggregate within an academic postgraduate dissertation.</p>
       </div>
 
       <div class="q-item" style="border-bottom: none; margin-bottom: 1rem; padding-bottom: 0;">
         <label class="option-label" style="align-items: flex-start; gap: 0.75rem;">
           <input type="checkbox" id="consentCheck" style="margin-top: 0.25rem; width: 18px; height: 18px;" />
-          <span style="font-size: 0.92rem; color: #f8fafc; line-height: 1.4;">
+          <span style="font-size: 0.92rem; line-height: 1.4;">
             I confirm that I have read and understood the information sheet above. I understand that my participation is anonymous and voluntary, and I agree to participate in this study.
           </span>
         </label>
@@ -569,7 +611,8 @@
       </div>
 
       <div class="btn-row">
-        <button type="button" class="btn-secondary" onclick="handleSubmit()">Submit Now &amp; Claim Voucher</button>
+        <!-- Submitting from Page 1 triggers 1%-8% discount -->
+        <button type="button" class="btn-secondary" onclick="handleSubmit(1)">Submit Now &amp; Claim Voucher</button>
         <button type="button" class="btn-primary" onclick="setPage(2)">Continue to Part 2 &rarr;</button>
       </div>
     </div>
@@ -673,7 +716,8 @@
 
       <div class="btn-row">
         <button type="button" class="btn-secondary" onclick="setPage(1)">&larr; Back to Part 1</button>
-        <button type="button" class="btn-primary" onclick="handleSubmit()">Submit &amp; Finish</button>
+        <!-- Submitting from Page 2 triggers 7%-15% discount -->
+        <button type="button" class="btn-primary" onclick="handleSubmit(2)">Submit &amp; Finish</button>
       </div>
     </div>
   </div>
@@ -695,19 +739,28 @@
   </div>
 
   <script>
-    // Live Submission URL mapped to your form
     const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdPAcIrWI1EQ73pRxlRbeWi6JZVIRpcA0u7qWPAwTyH1zBoyQ/formResponse";
 
     let discountRate = 0;
     let finalCode = "";
 
-    // Page router
+    // 1. Theme Toggle Logic
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const currentTheme = htmlEl.getAttribute("data-theme");
+      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+      
+      htmlEl.setAttribute("data-theme", nextTheme);
+      document.getElementById("themeIcon").innerText = nextTheme === "dark" ? "☀️" : "🌙";
+      document.getElementById("themeText").innerText = nextTheme === "dark" ? "Light" : "Dark";
+    }
+
+    // 2. Page Navigation
     function setPage(pageNum) {
       document.getElementById("page0").classList.toggle("active", pageNum === 0);
       document.getElementById("page1").classList.toggle("active", pageNum === 1);
       document.getElementById("page2").classList.toggle("active", pageNum === 2);
 
-      // Hide progress bar on Page 0 (Information Sheet)
       const progressBox = document.getElementById("mainProgressBox");
       if (progressBox) {
         progressBox.style.display = (pageNum === 0) ? "none" : "block";
@@ -716,7 +769,7 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    // Consent validation before allowing participant to begin
+    // 3. Consent Validation
     function startSurveyAfterConsent() {
       const isAgreed = document.getElementById("consentCheck").checked;
       const errorMsg = document.getElementById("consentError");
@@ -730,7 +783,7 @@
       setPage(1);
     }
 
-    // Question-by-question progress tracking
+    // 4. Dynamic Progress Calculation
     function updateProgress() {
       const qItems = document.querySelectorAll("#page1 .q-item, #page2 .q-item");
       let answeredCount = 0;
@@ -743,7 +796,7 @@
         else if (checkedBox) answeredCount++;
       });
 
-      const totalQuestions = qItems.length; // Exactly 33 questions
+      const totalQuestions = qItems.length;
       const percent = Math.round((answeredCount / totalQuestions) * 100);
       
       document.getElementById("progressFill").style.width = percent + "%";
@@ -751,26 +804,30 @@
       document.getElementById("counterText").innerText = `${answeredCount} of ${totalQuestions} answered`;
     }
 
-    // Attach listeners across all form inputs
     document.querySelectorAll("input, textarea").forEach(element => {
       element.addEventListener("input", updateProgress);
       element.addEventListener("change", updateProgress);
     });
 
-    // Handle Form Submission
-    async function handleSubmit() {
-      // 1. Generate random discount between 1% and 20%
-      discountRate = Math.floor(Math.random() * 20) + 1;
+    // 5. Tiered Submission Handler
+    async function handleSubmit(sourcePage) {
+      // Tiered discount math: Page 1 = 1% to 8%, Page 2 = 7% to 15%
+      if (sourcePage === 1) {
+        discountRate = Math.floor(Math.random() * 8) + 1; // 1% to 8%
+      } else {
+        discountRate = Math.floor(Math.random() * 9) + 7; // 7% to 15%
+      }
+
       finalCode = "VILLAGE" + discountRate + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
 
       document.getElementById("discountText").innerText = discountRate + "% OFF";
       document.getElementById("couponCode").innerText = finalCode;
 
-      // 2. Open reward modal and fire confetti
+      // Show reward pop-up
       document.getElementById("rewardModal").classList.add("open");
       confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
 
-      // 3. Assemble and silently submit data to Google Forms
+      // Gather answers and submit silently
       const formData = new FormData();
       document.querySelectorAll("#page1 .q-item, #page2 .q-item").forEach(item => {
         const text = item.querySelector("input[type='text'], textarea");
@@ -791,49 +848,58 @@
       }
     }
 
-    // Direct client-side PNG generator
+    // 6. Direct Client-Side Canvas PNG Downloader
     function downloadVoucherPNG() {
       const canvas = document.createElement("canvas");
       canvas.width = 600;
       canvas.height = 320;
       const ctx = canvas.getContext("2d");
 
+      // Card Base
       ctx.fillStyle = "#1e293b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Solid outer boundary
       ctx.strokeStyle = "#6366f1";
       ctx.lineWidth = 6;
       ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
 
+      // Dashed inner border
       ctx.strokeStyle = "#475569";
       ctx.lineWidth = 2;
       ctx.setLineDash([8, 6]);
       ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
       ctx.setLineDash([]);
 
+      // Label
       ctx.fillStyle = "#94a3b8";
       ctx.font = "bold 16px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("COMMUNITY REWARD VOUCHER", 300, 75);
 
+      // Percentage
       ctx.fillStyle = "#22c55e";
       ctx.font = "bold 60px system-ui, sans-serif";
       ctx.fillText(`${discountRate}% OFF`, 300, 150);
 
+      // Code Box
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(170, 185, 260, 48);
       ctx.strokeStyle = "#38bdf8";
       ctx.lineWidth = 1.5;
       ctx.strokeRect(170, 185, 260, 48);
 
+      // Code Text
       ctx.fillStyle = "#38bdf8";
       ctx.font = "bold 20px monospace";
       ctx.fillText(finalCode, 300, 216);
 
+      // Footer
       ctx.fillStyle = "#64748b";
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillText("Valid on your next store visit • Present image to cashier", 300, 268);
 
+      // Trigger automatic download
       const link = document.createElement("a");
       link.download = `village-store-voucher-${discountRate}pct.png`;
       link.href = canvas.toDataURL("image/png");
