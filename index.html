@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Micheldever Village Store Community Survey</title>
+  <!-- Confetti library CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #6366f1;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: var(--card);
+      border-radius: 16px;
+      max-width: 680px;
+      width: 100%;
+      padding: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      height: fit-content;
+    }
+
+    /* Progress Tracker */
+    .progress-box {
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 1rem;
+      background: var(--card);
+      padding-bottom: 0.5rem;
+      z-index: 10;
+      display: none; /* Initially hidden on Page 0 */
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .q-item {
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(51,65,85,0.5);
+    }
+
+    label.title {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      font-size: 0.98rem;
+      line-height: 1.4;
+    }
+
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: #fff;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    .scale-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.75rem 0;
+      padding: 0 0.5rem;
+    }
+
+    .scale-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .scale-ends {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-size: 0.95rem;
+      transition: opacity 0.2s ease;
+    }
+
+    button:hover { opacity: 0.9; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: #334155; color: var(--text); }
+
+    /* Modal Backdrop & Card */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      display: none;
+      place-items: center;
+      padding: 1rem;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open { display: grid; }
+
+    .modal-card {
+      background: #1e293b;
+      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid #475569;
+      box-shadow: 0 20px 30px rgba(0,0,0,0.5);
+    }
+
+    .discount-val {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: #22c55e;
+      margin: 0.5rem 0;
+    }
+
+    .coupon-code {
+      display: inline-block;
+      font-family: monospace;
+      padding: 8px 16px;
+      background: #0f172a;
+      border: 1px dashed #38bdf8;
+      border-radius: 6px;
+      color: #38bdf8;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Live Progress Bar -->
+    <div class="progress-box" id="mainProgressBox">
+      <div class="progress-labels">
+        <span id="counterText">0 of 33 answered</span>
+        <span id="percentText">0%</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 0: PARTICIPANT INFORMATION SHEET & CONSENT ================= -->
+    <div id="page0" class="page active">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <span style="font-size: 0.82rem; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em;">
+          University of Winchester • Faculty of Business &amp; Digital Technologies
+        </span>
+        <h2 style="margin: 0.5rem 0 0.25rem 0; font-size: 1.45rem;">Participant Information &amp; Consent</h2>
+        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">Revitalising Rural Retail: Community Shopping &amp; Service Improvement Survey</p>
+      </div>
+
+      <div style="background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: #cbd5e1; max-height: 280px; overflow-y: auto; margin-bottom: 1.5rem;">
+        <p style="margin-top: 0;"><strong>Researcher:</strong> Partha Saroti Roy (MSc Digital Marketing and Analytics)<br>
+        <strong>Contact:</strong> P.roy1.25@unimail.winchester.ac.uk<br>
+        <strong>Supervisor:</strong> Ian Lock (Ian.Lock@winchester.ac.uk)</p>
+
+        <p><strong>1. Aim of the Study:</strong><br>
+        This research study investigates local shopping patterns, online grocery delivery habits, and community interest in new retail and social hub services (such as a café or ready-to-eat food counter) at the Micheldever Village Store.</p>
+
+        <p><strong>2. Voluntary Participation &amp; Time Commitment:</strong><br>
+        Your participation is entirely voluntary and will take approximately 3 to 5 minutes. You may stop and exit the questionnaire at any point before submitting without consequence.</p>
+
+        <p><strong>3. Complete Anonymity &amp; Withdrawal:</strong><br>
+        This survey is strictly anonymous. No names, personal email addresses, phone numbers, or IP addresses are tracked or stored. Because responses cannot be linked back to individual participants, data cannot be modified or withdrawn once submitted.</p>
+
+        <p><strong>4. Data Handling &amp; Confidentiality:</strong><br>
+        All gathered information will be stored securely on a password-protected University OneDrive account in strict accordance with the Data Protection Act (2018). Data will only be reported in aggregate within an academic dissertation.</p>
+      </div>
+
+      <div class="q-item" style="border-bottom: none; margin-bottom: 1rem; padding-bottom: 0;">
+        <label class="option-label" style="align-items: flex-start; gap: 0.75rem;">
+          <input type="checkbox" id="consentCheck" style="margin-top: 0.25rem; width: 18px; height: 18px;" />
+          <span style="font-size: 0.92rem; color: #f8fafc; line-height: 1.4;">
+            I confirm that I have read and understood the information sheet above. I understand that my participation is anonymous and voluntary, and I agree to participate in this study.
+          </span>
+        </label>
+        <div id="consentError" style="color: #ef4444; font-size: 0.85rem; margin-top: 0.5rem; display: none;">
+          Please tick the box above to confirm your consent before proceeding.
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn-primary" onclick="startSurveyAfterConsent()">I Agree &amp; Begin Survey &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 1 (Q1 to Q24) ================= -->
+    <div id="page1" class="page">
+      <h2 style="margin-top:0;">Part 1: General &amp; Shopping Habits</h2>
+
+      <!-- Q1 -->
+      <div class="q-item">
+        <label class="title">1. What is your age group? *</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.330556497" value="18-24" /> 18–24</label>
+          <label class="option-label"><input type="radio" name="entry.330556497" value="25-34" /> 25–34</label>
+          <label class="option-label"><input type="radio" name="entry.330556497" value="35-44" /> 35–44</label>
+          <label class="option-label"><input type="radio" name="entry.330556497" value="45-54" /> 45–54</label>
+          <label class="option-label"><input type="radio" name="entry.330556497" value="Prefer not to say" /> Prefer not to say</label>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="q-item">
+        <label class="title">2. Where do you live? *</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1111104409" value="Micheldever" /> Micheldever</label>
+          <label class="option-label"><input type="radio" name="entry.1111104409" value="Winchester" /> Winchester</label>
+          <label class="option-label"><input type="radio" name="entry.1111104409" value="Nearby village" /> Nearby village</label>
+          <label class="option-label"><input type="radio" name="entry.1111104409" value="Other (no need to specify)" /> Other (no need to specify)</label>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="q-item">
+        <label class="title">3. How many people live in your household? *</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1062808780" value="1" /> 1</label>
+          <label class="option-label"><input type="radio" name="entry.1062808780" value="2" /> 2</label>
+          <label class="option-label"><input type="radio" name="entry.1062808780" value="3-4" /> 3–4</label>
+          <label class="option-label"><input type="radio" name="entry.1062808780" value="5 or more" /> 5 or more</label>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="q-item">
+        <label class="title">4. How often do you visit this store?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.315870094" value="Everyday" /> Everyday</label>
+          <label class="option-label"><input type="radio" name="entry.315870094" value="2-3 times a week" /> 2–3 times a week</label>
+          <label class="option-label"><input type="radio" name="entry.315870094" value="Once a week" /> Once a week</label>
+          <label class="option-label"><input type="radio" name="entry.315870094" value="Once a month" /> Once a month</label>
+          <label class="option-label"><input type="radio" name="entry.315870094" value="Rarely" /> Rarely</label>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="q-item">
+        <label class="title">5. Where do you currently do the majority of your "main weekly" grocery shopping?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.873434064" value="Online delivery (Tesco, Ocado, Sainsbury's, Asda)" /> Online delivery (Tesco, Ocado, Sainsbury's, Asda)</label>
+          <label class="option-label"><input type="radio" name="entry.873434064" value="Physical supermarket in a nearby town/city (Winchester, Basingstoke, etc.)" /> Physical supermarket in a nearby town/city (Winchester, Basingstoke, etc.)</label>
+          <label class="option-label"><input type="radio" name="entry.873434064" value="Micheldever Village Store" /> Micheldever Village Store</label>
+          <label class="option-label"><input type="radio" name="entry.873434064" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="q-item">
+        <label class="title">6. If you regularly use online grocery delivery, what are your primary motivations?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.727383684" value="Wider range of products/brands" /> Wider range of products/brands</label>
+          <label class="option-label"><input type="radio" name="entry.727383684" value="Cheaper prices / better deals" /> Cheaper prices / better deals</label>
+          <label class="option-label"><input type="radio" name="entry.727383684" value="Convenience of doorstep delivery" /> Convenience of doorstep delivery</label>
+          <label class="option-label"><input type="radio" name="entry.727383684" value="Better availability of dietary items (gluten-free, vegan, etc.)" /> Better availability of dietary items (gluten-free, vegan, etc.)</label>
+          <label class="option-label"><input type="radio" name="entry.727383684" value="Habit / I've always done it this way" /> Habit / I've always done it this way</label>
+          <label class="option-label"><input type="radio" name="entry.727383684" value="I do not use online grocery delivery" /> I do not use online grocery delivery</label>
+        </div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="q-item">
+        <label class="title">7. What percentage of your household's total grocery shopping is currently done online or at out-of-town supermarkets?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.298142494" value="0-25%" /> 0–25%</label>
+          <label class="option-label"><input type="radio" name="entry.298142494" value="26-50%" /> 26–50%</label>
+          <label class="option-label"><input type="radio" name="entry.298142494" value="51-75%" /> 51–75%</label>
+          <label class="option-label"><input type="radio" name="entry.298142494" value="76-100%" /> 76–100%</label>
+        </div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="q-item">
+        <label class="title">8. When you visit the Village Store, what is the primary reason for your visit? (Check all that apply)</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Emergency purchases (milk, bread, eggs, etc.)" /> Emergency purchases (milk, bread, eggs, etc.)</label>
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Snacks, soft drinks, alcohol" /> Snacks, soft drinks, alcohol</label>
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Fresh produce (fruits, vegetables, meats)" /> Fresh produce (fruits, vegetables, meats)</label>
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Parcel pickup / post services" /> Parcel pickup / post services</label>
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Social interaction / chatting with staff or neighbours" /> Social interaction / chatting with staff or neighbours</label>
+          <label class="option-label"><input type="checkbox" name="entry.892931662" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="q-item">
+        <label class="title">9. What is the primary reason you do NOT use the local shop for your main weekly shop?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1638332342" value="Price" /> Price</label>
+          <label class="option-label"><input type="radio" name="entry.1638332342" value="Product range" /> Product range</label>
+          <label class="option-label"><input type="radio" name="entry.1638332342" value="Convenience" /> Convenience</label>
+          <label class="option-label"><input type="radio" name="entry.1638332342" value="Lack of fresh goods" /> Lack of fresh goods</label>
+          <label class="option-label"><input type="radio" name="entry.1638332342" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="q-item">
+        <label class="title">10. What types of products do you usually buy here? (Select all that apply)</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Fresh produce" /> Fresh produce</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Dairy & milk" /> Dairy & milk</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Alcohol" /> Alcohol</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Soft drinks" /> Soft drinks</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Snacks & chocolates" /> Snacks & chocolates</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Medicines" /> Medicines</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Household items" /> Household items</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Vapes / nicotine pouches" /> Vapes / nicotine pouches</label>
+          <label class="option-label"><input type="checkbox" name="entry.354014947" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q11 Scale -->
+      <div class="q-item">
+        <label class="title">11. How satisfied are you with the current product variety?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.772198929" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.772198929" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.772198929" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.772198929" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.772198929" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Satisfied</span><span>Very Satisfied</span></div>
+      </div>
+
+      <!-- Q12 Scale -->
+      <div class="q-item">
+        <label class="title">12. How satisfied are you with product availability (stockouts, missing items)?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.1612548652" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.1612548652" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.1612548652" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.1612548652" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.1612548652" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Satisfied</span><span>Very Satisfied</span></div>
+      </div>
+
+      <!-- Q13 Scale -->
+      <div class="q-item">
+        <label class="title">13. How satisfied are you with the pricing of products?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.667580781" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.667580781" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.667580781" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.667580781" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.667580781" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Satisfied</span><span>Very Satisfied</span></div>
+      </div>
+
+      <!-- Q14 Text -->
+      <div class="q-item">
+        <label class="title">14. What are the top 3 items you regularly buy online or from a larger supermarket that you would buy at the Village Store if they were reliably stocked?</label>
+        <input type="text" name="entry.1278224647" placeholder="e.g. Sourdough bread, fresh berries, oat milk" />
+      </div>
+
+      <!-- Q15 Checkboxes -->
+      <div class="q-item">
+        <label class="title">15. Which product categories do you think should be expanded? (Check all that apply)</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Fresh produce" /> Fresh produce</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Dairy" /> Dairy</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Snacks" /> Snacks</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Alcohol" /> Alcohol</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Medicines" /> Medicines</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Household items" /> Household items</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Vapes" /> Vapes</label>
+          <label class="option-label"><input type="checkbox" name="entry.584288174" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q16 -->
+      <div class="q-item">
+        <label class="title">16. When using local services (post office, café, etc.), how often do you make an additional impulse purchase?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1813835761" value="Always" /> Always</label>
+          <label class="option-label"><input type="radio" name="entry.1813835761" value="Frequently" /> Frequently</label>
+          <label class="option-label"><input type="radio" name="entry.1813835761" value="Sometimes" /> Sometimes</label>
+          <label class="option-label"><input type="radio" name="entry.1813835761" value="Rarely" /> Rarely</label>
+        </div>
+      </div>
+
+      <!-- Q17 Scale -->
+      <div class="q-item">
+        <label class="title">17. How convenient is the store location for you?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.460492387" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.460492387" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.460492387" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.460492387" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.460492387" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Convenient</span><span>Very Convenient</span></div>
+      </div>
+
+      <!-- Q18 Scale -->
+      <div class="q-item">
+        <label class="title">18. How would you rate the friendliness of staff?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.1936922679" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.1936922679" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.1936922679" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.1936922679" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.1936922679" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Satisfied</span><span>Very Satisfied</span></div>
+      </div>
+
+      <!-- Q19 Scale -->
+      <div class="q-item">
+        <label class="title">19. How would you rate the speed of service?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.223032039" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.223032039" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.223032039" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.223032039" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.223032039" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Satisfied</span><span>Very Satisfied</span></div>
+      </div>
+
+      <!-- Q20 Scale -->
+      <div class="q-item">
+        <label class="title">20. If the Village Store offered a "Local Click &amp; Collect" service (order a wider range of groceries for next-day pickup), how likely would you be to use it?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.726070309" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.726070309" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.726070309" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.726070309" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.726070309" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Very Unlikely</span><span>Very Likely</span></div>
+      </div>
+
+      <!-- Q21 Scale -->
+      <div class="q-item">
+        <label class="title">21. If the Micheldever shop introduced a small café and/or restaurant area, rank them from 1 (Least Useful) to 5 (Most Useful):</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.648169551" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.648169551" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.648169551" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.648169551" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.648169551" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Least Useful</span><span>Most Useful</span></div>
+      </div>
+
+      <!-- Q22 Scale -->
+      <div class="q-item">
+        <label class="title">22. If the shop featured a café/coffee area, how likely are you to spend time there socially?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.155246199" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.155246199" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.155246199" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.155246199" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.155246199" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Unlikely</span><span>Very Likely</span></div>
+      </div>
+
+      <!-- Q23 -->
+      <div class="q-item">
+        <label class="title">23. Would you be interested in buying freshly prepared food from the shop?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1423252288" value="Yes" /> Yes</label>
+          <label class="option-label"><input type="radio" name="entry.1423252288" value="Maybe" /> Maybe</label>
+          <label class="option-label"><input type="radio" name="entry.1423252288" value="No" /> No</label>
+        </div>
+      </div>
+
+      <!-- Q24 (Last Question on Page 1) -->
+      <div class="q-item">
+        <label class="title">24. What time of day would you most likely buy fresh food?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.753063873" value="Morning" /> Morning</label>
+          <label class="option-label"><input type="radio" name="entry.753063873" value="Lunch time" /> Lunch time</label>
+          <label class="option-label"><input type="radio" name="entry.753063873" value="Afternoon" /> Afternoon</label>
+          <label class="option-label"><input type="radio" name="entry.753063873" value="Evening" /> Evening</label>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn-secondary" onclick="handleSubmit()">Submit Now &amp; Claim Voucher</button>
+        <button type="button" class="btn-primary" onclick="setPage(2)">Continue to Part 2 &rarr;</button>
+      </div>
+    </div>
+
+    <!-- ================= PAGE 2 (Q25 to Q33) ================= -->
+    <div id="page2" class="page">
+      <h2 style="margin-top:0;">Part 2: Food Menu, Pricing &amp; Ideas</h2>
+
+      <!-- Q25 Checkboxes -->
+      <div class="q-item">
+        <label class="title">25. What cooked food do you prefer? (Check all that apply)</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Biryani" /> Biryani</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Chicken or lamb curry" /> Chicken or lamb curry</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Chinese" /> Chinese</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Italian" /> Italian</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Mexican" /> Mexican</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Pakora" /> Pakora</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Samosa" /> Samosa</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Sandwiches" /> Sandwiches</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Wraps" /> Wraps</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Vegetarian meals" /> Vegetarian meals</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Non-vegetarian meals" /> Non-vegetarian meals</label>
+          <label class="option-label"><input type="checkbox" name="entry.1084196567" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q26 Scale -->
+      <div class="q-item">
+        <label class="title">26. How important is freshness and hygiene when buying ready-to-eat food?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.1143425837" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.1143425837" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.1143425837" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.1143425837" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.1143425837" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Important</span><span>Very Important</span></div>
+      </div>
+
+      <!-- Q27 Scale -->
+      <div class="q-item">
+        <label class="title">27. How important is price when choosing fresh food?</label>
+        <div class="scale-row">
+          <label class="scale-option"><input type="radio" name="entry.136264537" value="1" />1</label>
+          <label class="scale-option"><input type="radio" name="entry.136264537" value="2" />2</label>
+          <label class="scale-option"><input type="radio" name="entry.136264537" value="3" />3</label>
+          <label class="scale-option"><input type="radio" name="entry.136264537" value="4" />4</label>
+          <label class="scale-option"><input type="radio" name="entry.136264537" value="5" />5</label>
+        </div>
+        <div class="scale-ends"><span>Not Important</span><span>Very Important</span></div>
+      </div>
+
+      <!-- Q28 -->
+      <div class="q-item">
+        <label class="title">28. What price range feels reasonable for fresh items like samosa, pakora, sandwiches?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.1239920861" value="£1–£2" /> £1–£2</label>
+          <label class="option-label"><input type="radio" name="entry.1239920861" value="£2–£3" /> £2–£3</label>
+          <label class="option-label"><input type="radio" name="entry.1239920861" value="£3–£5" /> £3–£5</label>
+          <label class="option-label"><input type="radio" name="entry.1239920861" value="£5+" /> £5+</label>
+          <label class="option-label"><input type="radio" name="entry.1239920861" value="Other" /> Other</label>
+        </div>
+      </div>
+
+      <!-- Q29 -->
+      <div class="q-item">
+        <label class="title">29. How much do you want to spend to buy cooked food from here?</label>
+        <div class="options-grid">
+          <label class="option-label"><input type="radio" name="entry.228352849" value="Less than £2" /> Less than £2</label>
+          <label class="option-label"><input type="radio" name="entry.228352849" value="£2–£3" /> £2–£3</label>
+          <label class="option-label"><input type="radio" name="entry.228352849" value="£3–£5" /> £3–£5</label>
+          <label class="option-label"><input type="radio" name="entry.228352849" value="£5–£7" /> £5–£7</label>
+          <label class="option-label"><input type="radio" name="entry.228352849" value="More than £7" /> More than £7</label>
+        </div>
+      </div>
+
+      <!-- Q30 Textarea -->
+      <div class="q-item">
+        <label class="title">30. What is one thing the store could improve immediately?</label>
+        <textarea name="entry.279325452" placeholder="Type your suggestion here..."></textarea>
+      </div>
+
+      <!-- Q31 Textarea -->
+      <div class="q-item">
+        <label class="title">31. What is one thing you already like about the store?</label>
+        <textarea name="entry.1253363929" placeholder="Type what you like here..."></textarea>
+      </div>
+
+      <!-- Q32 Textarea -->
+      <div class="q-item">
+        <label class="title">32. In your opinion, what is the one main improvement that would encourage you to spend more of your weekly grocery budget at the Micheldever Village Store?</label>
+        <textarea name="entry.1417419156" placeholder="Your suggestions..."></textarea>
+      </div>
+
+      <!-- Q33 Textarea -->
+      <div class="q-item">
+        <label class="title">33. What kind of "New Service" would make your shopping experience better?</label>
+        <textarea name="entry.85466095" placeholder="New services you would like to see..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn-secondary" onclick="setPage(1)">&larr; Back to Part 1</button>
+        <button type="button" class="btn-primary" onclick="handleSubmit()">Submit &amp; Finish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP REWARD MODAL -->
+  <div id="rewardModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div style="font-size: 2.5rem;">🎉</div>
+      <h2 style="margin: 0.4rem 0;">Thank You!</h2>
+      <p style="color: var(--muted); margin: 0;">Here is your randomized village reward voucher:</p>
+      
+      <div id="discountText" class="discount-val">10% OFF</div>
+      <div id="couponCode" class="coupon-code">VILLAGE-10</div>
+
+      <button class="btn-primary" style="width: 100%;" onclick="downloadVoucherPNG()">
+        Download Voucher (PNG)
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Live Submission URL mapped to your form
+    const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdPAcIrWI1EQ73pRxlRbeWi6JZVIRpcA0u7qWPAwTyH1zBoyQ/formResponse";
+
+    let discountRate = 0;
+    let finalCode = "";
+
+    // Page router
+    function setPage(pageNum) {
+      document.getElementById("page0").classList.toggle("active", pageNum === 0);
+      document.getElementById("page1").classList.toggle("active", pageNum === 1);
+      document.getElementById("page2").classList.toggle("active", pageNum === 2);
+
+      // Hide progress bar on Page 0 (Information Sheet)
+      const progressBox = document.getElementById("mainProgressBox");
+      if (progressBox) {
+        progressBox.style.display = (pageNum === 0) ? "none" : "block";
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Consent validation before allowing participant to begin
+    function startSurveyAfterConsent() {
+      const isAgreed = document.getElementById("consentCheck").checked;
+      const errorMsg = document.getElementById("consentError");
+
+      if (!isAgreed) {
+        errorMsg.style.display = "block";
+        return;
+      }
+
+      errorMsg.style.display = "none";
+      setPage(1);
+    }
+
+    // Question-by-question progress tracking
+    function updateProgress() {
+      const qItems = document.querySelectorAll("#page1 .q-item, #page2 .q-item");
+      let answeredCount = 0;
+
+      qItems.forEach(item => {
+        const textInput = item.querySelector("input[type='text'], textarea");
+        const checkedBox = item.querySelector("input[type='radio']:checked, input[type='checkbox']:checked");
+        
+        if (textInput && textInput.value.trim() !== "") answeredCount++;
+        else if (checkedBox) answeredCount++;
+      });
+
+      const totalQuestions = qItems.length; // Exactly 33 questions
+      const percent = Math.round((answeredCount / totalQuestions) * 100);
+      
+      document.getElementById("progressFill").style.width = percent + "%";
+      document.getElementById("percentText").innerText = percent + "%";
+      document.getElementById("counterText").innerText = `${answeredCount} of ${totalQuestions} answered`;
+    }
+
+    // Attach listeners across all form inputs
+    document.querySelectorAll("input, textarea").forEach(element => {
+      element.addEventListener("input", updateProgress);
+      element.addEventListener("change", updateProgress);
+    });
+
+    // Handle Form Submission
+    async function handleSubmit() {
+      // 1. Generate random discount between 1% and 20%
+      discountRate = Math.floor(Math.random() * 20) + 1;
+      finalCode = "VILLAGE" + discountRate + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+      document.getElementById("discountText").innerText = discountRate + "% OFF";
+      document.getElementById("couponCode").innerText = finalCode;
+
+      // 2. Open reward modal and fire confetti
+      document.getElementById("rewardModal").classList.add("open");
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+
+      // 3. Assemble and silently submit data to Google Forms
+      const formData = new FormData();
+      document.querySelectorAll("#page1 .q-item, #page2 .q-item").forEach(item => {
+        const text = item.querySelector("input[type='text'], textarea");
+        const checked = item.querySelectorAll("input[type='radio']:checked, input[type='checkbox']:checked");
+
+        if (text && text.value.trim() !== "") {
+          formData.append(text.name, text.value.trim());
+        }
+        checked.forEach(box => {
+          formData.append(box.name, box.value);
+        });
+      });
+
+      try {
+        await fetch(GOOGLE_FORM_URL, { method: "POST", mode: "no-cors", body: formData });
+      } catch (err) {
+        console.error("Submission failed:", err);
+      }
+    }
+
+    // Direct client-side PNG generator
+    function downloadVoucherPNG() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 600;
+      canvas.height = 320;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "#6366f1";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(28, 28, canvas.width - 56, canvas.height - 56);
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "bold 16px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("COMMUNITY REWARD VOUCHER", 300, 75);
+
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "bold 60px system-ui, sans-serif";
+      ctx.fillText(`${discountRate}% OFF`, 300, 150);
+
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(170, 185, 260, 48);
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(170, 185, 260, 48);
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 20px monospace";
+      ctx.fillText(finalCode, 300, 216);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText("Valid on your next store visit • Present image to cashier", 300, 268);
+
+      const link = document.createElement("a");
+      link.download = `village-store-voucher-${discountRate}pct.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+  </script>
+</body>
+</html>
