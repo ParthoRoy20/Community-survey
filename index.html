@@ -63,24 +63,30 @@
 
     /* Theme Switcher Button */
     .theme-toggle-btn {
-      position: absolute;
-      top: 1.25rem;
-      right: 1.25rem;
-      background: var(--box-bg);
+      z-index: 999;
+      position: fixed;
+      top: 10rem;
+      right: 0.25rem;
+      background: var(--card);
       border: 1px solid var(--border);
       color: var(--text);
       padding: 6px 12px;
-      border-radius: 20px;
+      border-radius: 999px;
       cursor: pointer;
       font-size: 0.82rem;
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      width: auto;
-      flex: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      transition: background 0.2s ease, transform 0.15s ease;
     }
 
+    .theme-toggle-btn:hover {
+  transform: translateY(-1px);
+}
+    
     /* Progress Tracker */
     .progress-box {
       margin-bottom: 2rem;
@@ -255,12 +261,13 @@
 </head>
 <body>
 
-  <div class="container">
-    
-    <!-- Light / Dark Theme Button -->
+  <!-- Light / Dark Theme Button -->
     <button type="button" class="theme-toggle-btn" onclick="toggleTheme()">
       <span id="themeIcon">☀️</span> <span id="themeText">Light</span>
     </button>
+  
+  <div class="container">
+    
 
     <!-- Live Progress Bar -->
     <div class="progress-box" id="mainProgressBox">
